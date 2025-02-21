@@ -11,6 +11,7 @@ import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.shape.Box;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 
 /**
@@ -21,6 +22,13 @@ public class SolarExplorer extends SimpleApplication {
 
     public static void main(String[] args) {
         SolarExplorer app = new SolarExplorer();
+
+        AppSettings settings = new AppSettings(true);
+        settings.setResolution(1280, 700);
+        settings.setWindowSize(1280, 700);
+
+        app.setSettings(settings);
+        app.setShowSettings(false);
         app.start();
     }
 
@@ -31,9 +39,9 @@ public class SolarExplorer extends SimpleApplication {
 
         Geometry planet = new Geometry("Sphere", planetMesh);
 
-        Material material = new Material(assetManager, "Common/MatDefs/Misc/Unshaded.j3md");
+        Material material = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md"); // Uses Lighting so object materials interact with light
         Texture texture = assetManager.loadTexture(texturePath);
-        material.setTexture("ColorMap", texture);
+        material.setTexture("DiffuseMap", texture);
 
         planet.setMaterial(material);
         planet.setLocalRotation(new Quaternion().fromAngles(FastMath.PI / -3, 0, 0)); // rotates object to correct position
@@ -44,6 +52,8 @@ public class SolarExplorer extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+
+        flyCam.setMoveSpeed(50);
 
         // All planet sizes will be calculated in reference to the Earth
         // Earth Radius = 3959 (miles)
@@ -87,10 +97,8 @@ public class SolarExplorer extends SimpleApplication {
         neptune.setLocalTranslation(15, 0, -5);
         rootNode.attachChild(neptune);
 
-
-
-        DirectionalLight sun = new DirectionalLight();
-        sun.setDirection(new Vector3f(10f, 10f, -1f).normalizeLocal());
+        DirectionalLight sun = new DirectionalLight(); // Adds light so objects can be seen
+        sun.setDirection(new Vector3f(10f, -10f, -1f).normalizeLocal());
         rootNode.addLight(sun);
     }
 
