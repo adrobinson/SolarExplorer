@@ -8,6 +8,7 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
+import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.post.FilterPostProcessor;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
@@ -16,6 +17,9 @@ import com.jme3.scene.shape.Sphere;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
+import de.lessvoid.nifty.Nifty;
+import de.lessvoid.nifty.screen.Screen;
+import de.lessvoid.nifty.screen.ScreenController;
 
 /**
  * This is the Main Class of your Game. It should boot up your game and do initial initialisation
@@ -35,13 +39,25 @@ public class SolarExplorer extends SimpleApplication {
         app.start();
     }
 
-
+    private Nifty nifty;
 
     @Override
     public void simpleInitApp() {
 
-        cam.setLocation(new Vector3f(150, 0, 150));
+        cam.setLocation(new Vector3f(120, 50, 50));
         flyCam.setMoveSpeed(50);
+
+
+        NiftyJmeDisplay niftyDisplay = new NiftyJmeDisplay(
+                assetManager, inputManager, audioRenderer, guiViewPort
+        );
+        nifty = niftyDisplay.getNifty();
+        guiViewPort.addProcessor(niftyDisplay);
+        // Load the Nifty XML layout
+        nifty.fromXml("Interface/simpleInterface.xml", "start", new NiftyScreenController());
+
+
+
         setBackground();
 
         // All planet sizes & rotation speeds will be calculated in reference to the Earth
@@ -52,7 +68,7 @@ public class SolarExplorer extends SimpleApplication {
         // Again, Earth's rotation will be 1 so we can easily calculate other rotations, we can do this by searching
         // how many earth days it takes a planet to rotate (earth day = 24 hours) OR how many hours it takes a planet to rotate,
         // compared to the 24 hours of the earth
-        Geometry earth = preparePlanet("Earth", 5f, 1f, "Textures/earth_dmap.jpg");
+        Geometry earth = preparePlanet("Earth", 1f, 1f, "Textures/earth_dmap.jpg");
         earth.setLocalTranslation(160, -20, 0);
         rootNode.attachChild(earth);
 
@@ -165,6 +181,7 @@ public class SolarExplorer extends SimpleApplication {
     @Override //this method will be called every game tick and can be used to make updates
     public void simpleUpdate(float tpf) {
 
+        System.out.println(cam.getLocation());
     }
 
     @Override

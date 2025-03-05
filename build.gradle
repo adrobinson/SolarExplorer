@@ -24,6 +24,7 @@ jar.manifest.attributes('Main-Class': mainClassName)
 repositories {
     mavenCentral()
     mavenLocal()
+    maven { url 'https://hub.jmonkeyengine.org/maven2' }
 }
 
 application {
@@ -46,6 +47,8 @@ dependencies {
 
     implementation 'com.simsilica:lemur:1.16.0'
     implementation 'com.simsilica:lemur-proto:1.13.0'
+
+    implementation "org.jmonkeyengine:jme3-niftygui:$jmonkeyengineVersion"
 }
 
 distZip {
@@ -97,7 +100,7 @@ task zipWindowsDistribution( dependsOn:buildWindowsDistribution, type: Zip) {
 task buildAllDistributions{
     group 'distribution'
     dependsOn 'zipWindowsDistribution'
-    
+
 
     doLast {
         println("Distributions created in build/distributions folder")
