@@ -8,18 +8,19 @@ import com.jme3.math.ColorRGBA;
 import com.jme3.math.FastMath;
 import com.jme3.math.Quaternion;
 import com.jme3.math.Vector3f;
-import com.jme3.niftygui.NiftyJmeDisplay;
 import com.jme3.post.FilterPostProcessor;
+import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
 import com.jme3.scene.Geometry;
 import com.jme3.scene.Spatial;
 import com.jme3.scene.shape.Sphere;
+import com.jme3.scene.shape.Torus;
 import com.jme3.system.AppSettings;
 import com.jme3.texture.Texture;
 import com.jme3.util.SkyFactory;
-import de.lessvoid.nifty.Nifty;
-import de.lessvoid.nifty.screen.Screen;
-import de.lessvoid.nifty.screen.ScreenController;
+
+import java.util.ArrayList;
+import java.util.Vector;
 
 /**
  * This is the Main Class of your Game. It should boot up your game and do initial initialisation
@@ -30,36 +31,27 @@ public class SolarExplorer extends SimpleApplication {
     public static void main(String[] args) {
         SolarExplorer app = new SolarExplorer();
 
-        AppSettings settings = new AppSettings(true);
+        AppSettings settings = new AppSettings(true); // Modify settings for window
         settings.setResolution(1280, 700);
         settings.setWindowSize(1280, 700);
 
         app.setSettings(settings);
         app.setShowSettings(false);
         app.start();
-    }
 
-    private Nifty nifty;
+
+    }
 
     @Override
     public void simpleInitApp() {
 
-        cam.setLocation(new Vector3f(120, 50, 50));
-        flyCam.setMoveSpeed(50);
-
-
-        NiftyJmeDisplay niftyDisplay = new NiftyJmeDisplay(
-                assetManager, inputManager, audioRenderer, guiViewPort
-        );
-        nifty = niftyDisplay.getNifty();
-        guiViewPort.addProcessor(niftyDisplay);
-        // Load the Nifty XML layout
-        nifty.fromXml("Interface/simpleInterface.xml", "start", new NiftyScreenController());
-
-
-
+        // Set cam location and disable the fly cam (no movement)
+        cam.setLocation(new Vector3f(160, -20, 10));
+        flyCam.setEnabled(false);
         setBackground();
 
+
+        /// ================================== INITIALIZING ALL PLANET GEOMETRIES ONTO THE SCENE =================================
         // All planet sizes & rotation speeds will be calculated in reference to the Earth
         // SIZE:
         // Earth Radius = 3959 in miles & 1 will be earth's radius in this program
@@ -103,9 +95,12 @@ public class SolarExplorer extends SimpleApplication {
 
         // (36,184 / 3959) * 100 = 913%
         // 1 saturn day = 10.75 hours (24 / 10.75 = 2.23)
-        Geometry saturn = preparePlanet("Saturn", 9.13f, 2.23f,"Textures/jupiter_dmap.jpg");
+        Geometry saturn = preparePlanet("Saturn", 9.13f, 2.23f,"Textures/saturn_dmap.jpg");
         saturn.setLocalTranslation(250, -20, 0);
         rootNode.attachChild(saturn);
+        // Add saturns rings
+        Geometry saturnRings = prepareRings(saturn, "Textures/saturn_ring.png",2.23f);
+        rootNode.attachChild(saturnRings);
 
         // (15,759 / 3959) * 100 = 398%
         // 1 uranus day = 17 hours (24 / 17 = 1.4)
@@ -119,11 +114,28 @@ public class SolarExplorer extends SimpleApplication {
         neptune.setLocalTranslation(320, -20, 0);
         rootNode.attachChild(neptune);
 
-        prepareSun(); // adds sun to scene
+        Geometry sun = prepareSun(); // adds sun to scene
+        // ===================================================================================================================================
+
+
+        // Create a list of planet locations
+        ArrayList<Vector3f> planetCoords = new ArrayList<>();
+        planetCoords.add(sun.getLocalTranslation());
+        planetCoords.add(mercury.getLocalTranslation());
+        planetCoords.add(venus.getLocalTranslation());
+        planetCoords.add(earth.getLocalTranslation());
+        planetCoords.add(mars.getLocalTranslation());
+        planetCoords.add(jupiter.getLocalTranslation());
+        planetCoords.add(saturn.getLocalTranslation());
+        planetCoords.add(uranus.getLocalTranslation());
+        planetCoords.add(neptune.getLocalTranslation());
+
+        // initialise the camera control class
+        CameraMovement cameraControl = new CameraMovement(inputManager, cam, planetCoords);
 
     }
 
-    // Function to create planets, arguments required are radius & file path to the planets texture
+    // Function to create planets, requires the planet name, size of planet, rotation speed and path to its texture
     private Geometry preparePlanet(String name, float radius, float rotationSpeed, String texturePath){
 
         Sphere planetMesh = new Sphere(32, 32, radius); // creates a sphere mesh with the radius given
@@ -143,8 +155,8 @@ public class SolarExplorer extends SimpleApplication {
 
     }
 
-    // Function to initialize sun
-    private void prepareSun(){
+    // Function to create the sun model
+    private Geometry prepareSun(){
 
         // Calculate size of the Sun compared to Earth
         // (432,690 / 3959) * 100 = 10929%
@@ -169,8 +181,34 @@ public class SolarExplorer extends SimpleApplication {
         sunlight.setPosition(sun.getLocalTranslation()); // set it at the suns position
         rootNode.addLight(sunlight); // add it to the root node
 
+        return sun;
     }
 
+    // Method to create rings for Saturn (and Uranus?)
+    private Geometry prepareRings(Geometry planet,String texturePath, float rotationSpeed){
+
+        // We use a torus geometry and then flatten it on the z-axis
+        Torus ringMesh = new Torus(40, 40, 3f, 15f); // (circle samples, radial samples, inner radius, outer radius)
+        Geometry rings = new Geometry("Ring", ringMesh);
+
+
+        Material material = new Material(assetManager, "Common/MatDefs/Light/Lighting.j3md"); // Uses Lighting so object materials interact with light
+        Texture texture = assetManager.loadTexture(texturePath);
+        material.setTexture("DiffuseMap", texture);
+
+        // Apply material and set properties of the rings
+        rings.setMaterial(material);
+        rings.setLocalScale(1,1,0.01f);
+        rings.setLocalRotation(new Quaternion().fromAngles(-1f,-0.6f,0f)); // rotate rings so they appear on an angle
+        rings.setLocalTranslation(planet.getLocalTranslation()); // Set the rings location to its planet
+
+        // Make the rings spin
+        rings.addControl(new RotatingControl(rotationSpeed, Vector3f.UNIT_Z));
+
+        return rings;
+    }
+
+    // Method to set the skybox
     private void setBackground(){
         Texture spaceTexture = assetManager.loadTexture("Textures/space_background.jpg");
         Spatial sky = SkyFactory.createSky(assetManager, spaceTexture, SkyFactory.EnvMapType.EquirectMap);
@@ -181,7 +219,8 @@ public class SolarExplorer extends SimpleApplication {
     @Override //this method will be called every game tick and can be used to make updates
     public void simpleUpdate(float tpf) {
 
-        System.out.println(cam.getLocation());
+//        System.out.println(cam.getLocation());
+
     }
 
     @Override
