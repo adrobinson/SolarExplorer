@@ -4,6 +4,7 @@ import com.jme3.input.InputManager;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.math.FastMath;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 
@@ -11,16 +12,19 @@ import java.util.ArrayList;
 
 public class CameraMovement{
 
-    ArrayList<Vector3f> camPositions = new ArrayList<>();
-    ArrayList<Vector3f> planetCoords;
-    private static CameraMovement cameraMovement;
-    private InputManager inputManager;
-    private Camera cam;
+    private final ArrayList<Vector3f> camPositions = new ArrayList<>();
+    private final ArrayList<Vector3f> planetCoords;
+    private final InputManager inputManager;
+    private final Camera cam;
     private int index = 0;
+    private Vector3f currentPos, targetPos;
+    private Vector3f currentLookAt, targetLookAt;
+    private float transitionProgress = 1f;
+    private final float transitionSpeed = 1f; // Transition duration in seconds
 
 
 
-    public CameraMovement(InputManager ipm, Camera cam, ArrayList<Vector3f> planetCoords){
+    public CameraMovement (InputManager ipm, Camera cam, ArrayList<Vector3f> planetCoords){
         this.inputManager = ipm;
         this.cam = cam;
         this.planetCoords = planetCoords;
@@ -41,36 +45,44 @@ public class CameraMovement{
         camPositions.add(new Vector3f(301.94614f, -20.58642f, 9.968126f));
     }
 
-    private void moveToPos(int index){
-        cam.setLocation(camPositions.get(index));
-        cam.lookAt(planetCoords.get(index), Vector3f.UNIT_Y);
+    private void startTransition(int newIndex) {
+        if (transitionProgress < 1f) return; // Prevent interrupting an ongoing transition
+
+        index = newIndex;
+        currentPos = cam.getLocation().clone();
+        targetPos = camPositions.get(index);
+        currentLookAt = cam.getDirection().clone().normalize();
+        targetLookAt = planetCoords.get(index).subtract(targetPos).normalize();
+        transitionProgress = 0f;
     }
 
-    private void initKeys(){
-        inputManager.addMapping("Back", new KeyTrigger(KeyInput.KEY_A));
-        inputManager.addListener(actionListener, "Back");
+    public void update(float tpf) {
+        if (transitionProgress < 1f) {
+            transitionProgress += tpf / transitionSpeed;
+            if (transitionProgress > 1f) transitionProgress = 1f;
 
-        inputManager.addMapping("Next", new KeyTrigger(KeyInput.KEY_D));
-        inputManager.addListener(actionListener, "Next");
-    }
+            Vector3f newPos = FastMath.interpolateLinear(transitionProgress, currentPos, targetPos);
+            cam.setLocation(newPos);
 
-    private ActionListener actionListener = (name, isPressed, tpf) -> {
-        if (name.equals("Back") && isPressed) {
-            if (index != 0){
-                System.out.println("A PRESSED");
-                index--;
-                System.out.println(index);
-                moveToPos(index);
-            }
+            Vector3f newLookAt = FastMath.interpolateLinear(transitionProgress, currentLookAt, targetLookAt);
+            cam.lookAt(newPos.add(newLookAt), Vector3f.UNIT_Y);
         }
+    }
 
-        if (name.equals("Next") && isPressed) {
-            if (index != camPositions.size() - 1){
-                System.out.println("D PRESSED");
-                index++;
-                System.out.println(index);
-                moveToPos(index);
-            }
+    private void initKeys() {
+        inputManager.addMapping("Back", new KeyTrigger(KeyInput.KEY_A));
+        inputManager.addMapping("Next", new KeyTrigger(KeyInput.KEY_D));
+        inputManager.addListener(actionListener, "Back", "Next");
+    }
+
+    private final ActionListener actionListener = (name, isPressed, tpf) -> {
+        if (!isPressed) return;
+
+        if (name.equals("Back") && index > 0) {
+            startTransition(index - 1);
+        }
+        if (name.equals("Next") && index < camPositions.size() - 1) {
+            startTransition(index + 1);
         }
     };
 

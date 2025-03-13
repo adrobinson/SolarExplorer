@@ -28,6 +28,8 @@ import java.util.Vector;
  */
 public class SolarExplorer extends SimpleApplication {
 
+    CameraMovement cameraControl;
+
     public static void main(String[] args) {
         SolarExplorer app = new SolarExplorer();
 
@@ -131,7 +133,7 @@ public class SolarExplorer extends SimpleApplication {
         planetCoords.add(neptune.getLocalTranslation());
 
         // initialise the camera control class
-        CameraMovement cameraControl = new CameraMovement(inputManager, cam, planetCoords);
+        cameraControl = new CameraMovement(inputManager, cam, planetCoords);
 
     }
 
@@ -218,7 +220,7 @@ public class SolarExplorer extends SimpleApplication {
 
     @Override //this method will be called every game tick and can be used to make updates
     public void simpleUpdate(float tpf) {
-
+        cameraControl.update(tpf);
 //        System.out.println(cam.getLocation());
 
     }
