@@ -29,6 +29,8 @@ import java.util.Vector;
 public class SolarExplorer extends SimpleApplication {
 
     CameraMovement cameraControl;
+    Vector3f startPos =  new Vector3f(371.5833f, -23.170752f, 277.7154f);
+
 
     public static void main(String[] args) {
         SolarExplorer app = new SolarExplorer();
@@ -47,8 +49,7 @@ public class SolarExplorer extends SimpleApplication {
     @Override
     public void simpleInitApp() {
 
-        // Set cam location and disable the fly cam (no movement)
-        cam.setLocation(new Vector3f(160, -20, 10));
+        //disable the fly cam (no movement)
         flyCam.setEnabled(false);
         setBackground();
 
@@ -131,9 +132,12 @@ public class SolarExplorer extends SimpleApplication {
         planetCoords.add(saturn.getLocalTranslation());
         planetCoords.add(uranus.getLocalTranslation());
         planetCoords.add(neptune.getLocalTranslation());
+        planetCoords.add(new Vector3f(205, -20, 0)); // Direction of cam for overview of planets
 
         // initialise the camera control class
         cameraControl = new CameraMovement(inputManager, cam, planetCoords);
+        cam.setLocation(startPos);
+        cam.lookAt(sun.getLocalTranslation(), Vector3f.UNIT_Y);
 
     }
 
@@ -221,7 +225,8 @@ public class SolarExplorer extends SimpleApplication {
     @Override //this method will be called every game tick and can be used to make updates
     public void simpleUpdate(float tpf) {
         cameraControl.update(tpf);
-//        System.out.println(cam.getLocation());
+       //System.out.println(cam.getLocation()+""+cam.getDirection());
+
 
     }
 

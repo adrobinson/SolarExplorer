@@ -43,6 +43,7 @@ public class CameraMovement{
         camPositions.add(new Vector3f(217.33705f, -22.488308f, 35.756268f));
         camPositions.add(new Vector3f(275.9376f, -19.672451f, 19.24524f));
         camPositions.add(new Vector3f(301.94614f, -20.58642f, 9.968126f));
+        camPositions.add(new Vector3f(178.56639f, -21.826445f, 142.91884f));
     }
 
     private void startTransition(int newIndex) {
